@@ -4,17 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Redação</title>
-    <meta name="description" content="Automação de redações com IA">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
+        /* Mesmo CSS anterior (compactado para economia de espaço, mas mantenha o original) */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --dark-blue: #0a1a2b;
             --medium-blue: #0a2f44;
@@ -25,7 +19,6 @@
             --error-red: #dc2626;
             --success-green: #10b981;
         }
-
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #000;
@@ -36,8 +29,6 @@
             display: flex;
             flex-direction: column;
         }
-
-        /* Fundo animado */
         body::before {
             content: '';
             position: fixed;
@@ -54,7 +45,6 @@
             animation: moveBackground 20s ease-in-out infinite alternate;
             z-index: -2;
         }
-
         body::after {
             content: '';
             position: fixed;
@@ -66,12 +56,10 @@
             pointer-events: none;
             z-index: -1;
         }
-
         @keyframes moveBackground {
             0% { transform: scale(1) translate(0, 0); }
             100% { transform: scale(1.05) translate(-1%, -1%); }
         }
-
         .page-wrapper {
             flex: 1;
             display: flex;
@@ -80,7 +68,6 @@
             padding: 1rem;
             backdrop-filter: blur(1px);
         }
-
         .login-container {
             width: 100%;
             max-width: 380px;
@@ -92,16 +79,13 @@
             border: 1px solid rgba(30, 74, 111, 0.3);
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
         }
-
         .header {
             text-align: center;
             margin-bottom: 2rem;
         }
-
         .logo-section {
             margin-bottom: 1rem;
         }
-
         .logo-text {
             font-size: 2.5rem;
             font-weight: 700;
@@ -110,13 +94,11 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .subtitle {
             color: var(--gray);
             font-weight: 400;
             margin-bottom: 0.5rem;
         }
-
         .tagline {
             font-size: 0.8rem;
             font-weight: 600;
@@ -124,23 +106,19 @@
             letter-spacing: 0.1em;
             text-transform: uppercase;
         }
-
         .input-group {
             position: relative;
             margin-bottom: 1.5rem;
         }
-
         .input-group label {
             display: block;
             font-size: 0.9rem;
             color: var(--gray);
             margin-bottom: 0.5rem;
         }
-
         .input-wrapper {
             position: relative;
         }
-
         .input-group input {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -152,17 +130,14 @@
             transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
         }
-
         .input-group input:focus {
             outline: none;
             border-color: var(--light-blue);
             box-shadow: 0 0 0 2px rgba(30, 74, 111, 0.3);
         }
-
         .input-group input[type="password"] {
             padding-right: 2.5rem;
         }
-
         .password-toggle {
             position: absolute;
             right: 0.75rem;
@@ -173,7 +148,6 @@
             color: var(--gray);
             cursor: pointer;
         }
-
         .btn {
             width: 100%;
             padding: 0.75rem;
@@ -192,27 +166,22 @@
             color: white;
             border: 1px solid var(--light-blue);
         }
-
         .btn:hover {
             background: var(--light-blue);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(30, 74, 111, 0.4);
         }
-
         .btn-accounts {
             background: transparent;
             border: 1px solid var(--light-blue);
             margin-bottom: 1.5rem;
         }
-
         .form-buttons {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
             margin-top: 1rem;
         }
-
-        /* Footer */
         .footer {
             text-align: center;
             padding: 1rem;
@@ -221,22 +190,17 @@
             border-top: 1px solid rgba(30, 74, 111, 0.3);
             width: 100%;
         }
-
         .footer p {
             color: var(--gray);
             font-size: 0.8rem;
         }
-
         .footer a {
             color: var(--light-blue);
             text-decoration: none;
         }
-
         .footer a:hover {
             text-decoration: underline;
         }
-
-        /* Modais */
         .modal {
             display: none;
             position: fixed;
@@ -251,11 +215,9 @@
             justify-content: center;
             padding: 1rem;
         }
-
         .modal.show {
             display: flex;
         }
-
         .modal-content {
             background: var(--dark-blue);
             border-radius: 16px;
@@ -264,7 +226,6 @@
             border: 1px solid var(--light-blue);
             box-shadow: 0 20px 60px rgba(0,20,40,0.6);
         }
-
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -272,12 +233,10 @@
             padding: 1.5rem 2rem;
             border-bottom: 1px solid var(--medium-blue);
         }
-
         .modal-header h2 {
             color: var(--white);
             font-size: 1.5rem;
         }
-
         .close-btn {
             background: none;
             border: none;
@@ -286,30 +245,24 @@
             cursor: pointer;
             transition: color 0.2s;
         }
-
         .close-btn:hover {
             color: var(--white);
         }
-
         .modal-body {
             padding: 2rem;
         }
-
-        /* Seleção de redações */
         .select-all {
             margin-bottom: 1rem;
             padding: 0.5rem;
             background: rgba(30, 74, 111, 0.2);
             border-radius: 8px;
         }
-
         .select-all label {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             cursor: pointer;
         }
-
         .redacao-items {
             max-height: 300px;
             overflow-y: auto;
@@ -318,7 +271,6 @@
             border-radius: 8px;
             padding: 0.5rem;
         }
-
         .redacao-item {
             margin-bottom: 0.5rem;
             padding: 0.5rem;
@@ -326,7 +278,6 @@
             border-radius: 8px;
             background: rgba(0,0,0,0.2);
         }
-
         .redacao-item label {
             display: flex;
             align-items: center;
@@ -334,14 +285,11 @@
             cursor: pointer;
             width: 100%;
         }
-
         .redacao-item input[type="checkbox"] {
             accent-color: var(--light-blue);
             width: 18px;
             height: 18px;
         }
-
-        /* Configuração de tempo */
         .time-settings {
             margin: 1rem 0;
             padding: 1rem;
@@ -351,18 +299,15 @@
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
-
         .time-input {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
-
         .time-input label {
             font-size: 0.9rem;
             color: var(--gray);
         }
-
         .time-input input {
             padding: 0.5rem;
             background: rgba(0,0,0,0.4);
@@ -371,8 +316,6 @@
             color: var(--white);
             font-family: 'Poppins', sans-serif;
         }
-
-        /* Notificações */
         .notification-container {
             position: fixed;
             top: 20px;
@@ -382,7 +325,6 @@
             flex-direction: column;
             gap: 10px;
         }
-
         .notification {
             padding: 1rem;
             border-radius: 8px;
@@ -397,26 +339,20 @@
             align-items: center;
             gap: 0.8rem;
         }
-
         .notification.show {
             transform: translateX(0);
         }
-
         .notification.error {
             background: #2d1a1a;
             border-left-color: var(--error-red);
         }
-
         .notification.success {
             background: #0a2f1f;
             border-left-color: var(--success-green);
         }
-
         .notification i {
             font-size: 1.2rem;
         }
-
-        /* Loading modals */
         .loading-modal {
             display: none;
             position: fixed;
@@ -430,11 +366,9 @@
             align-items: center;
             justify-content: center;
         }
-
         .loading-modal.show {
             display: flex;
         }
-
         .loading-content {
             background: var(--dark-blue);
             padding: 2rem;
@@ -443,7 +377,6 @@
             border: 1px solid var(--light-blue);
             min-width: 300px;
         }
-
         .loading-spinner {
             border: 4px solid rgba(255,255,255,0.1);
             border-top: 4px solid var(--light-blue);
@@ -453,15 +386,11 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 1rem;
         }
-
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .loading-content p {
             color: var(--gray);
             margin-top: 0.5rem;
         }
-
-        /* Responsividade */
         @media (max-width: 480px) {
             .login-container { padding: 1.5rem; }
             .logo-text { font-size: 2rem; }
@@ -507,7 +436,6 @@
     </div>
 </div>
 
-<!-- Footer -->
 <div class="footer">
     <p>feito por <a href="https://discord.gg/4gTtJ9BJe" target="_blank">bakai</a> • todos os direitos reservados</p>
 </div>
@@ -538,7 +466,6 @@
             </div>
             <div id="redacaoListContainer" class="redacao-items"></div>
             
-            <!-- Configuração de tempo mínimo e máximo (em minutos) -->
             <div class="time-settings">
                 <div class="time-input">
                     <label for="minTime">Tempo mínimo (minutos):</label>
@@ -575,7 +502,6 @@
     </div>
 </div>
 
-<!-- Container de notificações -->
 <div id="notification-container" class="notification-container"></div>
 
 <script>
@@ -635,7 +561,7 @@
         document.querySelector('.password-toggle i').classList.toggle('fa-eye-slash');
     });
 
-    // ==================== CONTAS SALVAS (localStorage) ====================
+    // ==================== CONTAS SALVAS ====================
     function getSavedAccounts() { 
         return JSON.parse(localStorage.getItem('network_redacao_accounts') || '{}'); 
     }
@@ -650,4 +576,14 @@
         const acc = getSavedAccounts();
         delete acc[ra];
         localStorage.setItem('network_redacao_accounts', JSON.stringify(acc));
-    
+    }
+
+    btnShowAccounts.addEventListener('click', () => {
+        const accounts = getSavedAccounts();
+        const container = document.getElementById('accountListContainer');
+        container.innerHTML = '';
+        
+        if (Object.keys(accounts).length === 0) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center;">Nenhuma conta salva.</p>';
+        } else {
+            for (const [ra, data] of Obj
