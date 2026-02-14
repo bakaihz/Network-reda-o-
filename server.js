@@ -11,22 +11,21 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== CONFIGURAÇÕES ====================
-const REMOTE_BASE_CLASS = 'https://network-class.onrender.com'; // Servidor de classes
-const REMOTE_BASE_REDACAO = 'https://network-redacao.onrender.com'; // Servidor de redações
+const EDUSP_API_BASE = 'https://edusp-api.ip.tv'; // API real da Edusp
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const MODEL = 'openai/gpt-oss-120b:free';
 
+// Chave fixa para o primeiro endpoint (credenciais)
 const CREDENTIALS_SUBSCRIPTION_KEY = '2b03c1db3884488795f79c37c069381a';
 
-// ==================== FUNÇÃO PROXY GENÉRICA ====================
-async function proxyRequest(req, res, baseUrl, endpoint, method = req.method) {
-  const url = `${baseUrl}${endpoint}`;
-  console.log(`🔗 [PROXY] ${method} ${url}`);
+// ==================== FUNÇÃO PROXY ====================
+async function proxyRequest(req, res, targetBase, endpoint, method = req.method) {
+  const url = `${targetBase}${endpoint}`;
   
   const headers = {
     ...req.headers,
-    host: new URL(baseUrl).host,
+    host: new URL(targetBase).host,
   };
   delete headers['content-length'];
   delete headers['connection'];
@@ -60,7 +59,7 @@ async function proxyRequest(req, res, baseUrl, endpoint, method = req.method) {
   }
 }
 
-// ==================== ROTA DE LOGIN PERSONALIZADA ====================
+// ==================== ROTA DE LOGIN (DUAS ETAPAS) ====================
 app.post('/registration/edusp', async (req, res) => {
   const { id, password } = req.body;
   console.log('📥 Requisição de login recebida:', { id, password: '***' });
@@ -70,6 +69,7 @@ app.post('/registration/edusp', async (req, res) => {
   }
 
   try {
+    // 1ª etapa: obter token do serviço de credenciais
     console.log('🔑 Obtendo token do serviço de credenciais...');
     const credenciaisResponse = await fetch('https://sedintegracoes.educacao.sp.gov.br/credenciais/api/LoginCompletoToken', {
       method: 'POST',
@@ -96,6 +96,7 @@ app.post('/registration/edusp', async (req, res) => {
       return res.status(401).json({ error: 'Token não recebido na primeira etapa' });
     }
 
+    // 2ª etapa: trocar token pelo auth_token
     console.log('🔄 Trocando token pelo auth_token...');
     const authResponse = await fetch('https://edusp-api.ip.tv/registration/edusp/token', {
       method: 'POST',
@@ -121,7 +122,7 @@ app.post('/registration/edusp', async (req, res) => {
     const authToken = authData.auth_token;
     const nick = authData.nick || '';
 
-    console.log('✅ Login bem-sucedido');
+    console.log('✅ Login bem-sucedido, auth_token obtido');
     res.json({
       auth_token: authToken,
       nick: nick,
@@ -134,46 +135,29 @@ app.post('/registration/edusp', async (req, res) => {
   }
 });
 
-// ==================== ROTAS PARA network-class.onrender.com ====================
+// ==================== ROTAS PROXY PARA API DA EDUSP ====================
 app.get('/room/user', (req, res) => {
-  console.log('📥 [CLASS] Buscando salas do usuário');
-  proxyRequest(req, res, REMOTE_BASE_CLASS, '/room/user', 'GET');
+  console.log('📥 Buscando salas do usuário');
+  proxyRequest(req, res, EDUSP_API_BASE, '/room/user', 'GET');
 });
 
 app.get('/tms/task/todo', (req, res) => {
-  console.log('📥 [CLASS] Buscando tarefas');
-  proxyRequest(req, res, REMOTE_BASE_CLASS, '/tms/task/todo', 'GET');
+  console.log('📥 Buscando tarefas (redações)');
+  proxyRequest(req, res, EDUSP_API_BASE, '/tms/task/todo', 'GET');
 });
 
 app.get('/tms/task/:id/apply', (req, res) => {
-  const queryString = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
-  const endpoint = `/tms/task/${req.params.id}/apply${queryString}`;
-  console.log(`📥 [CLASS] Aplicando à tarefa ${req.params.id}`);
-  proxyRequest(req, res, REMOTE_BASE_CLASS, endpoint, 'GET');
+  const endpoint = `/tms/task/${req.params.id}/apply${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`;
+  console.log(`📥 Aplicando à tarefa ${req.params.id}`);
+  proxyRequest(req, res, EDUSP_API_BASE, endpoint, 'GET');
 });
 
-// ==================== ROTAS PARA network-redacao.onrender.com ====================
 app.post('/complete', (req, res) => {
-  console.log('📥 [REDACAO] Salvando redação:', req.body.task_id);
-  proxyRequest(req, res, REMOTE_BASE_REDACAO, '/complete', 'POST');
+  console.log('📥 Salvando rascunho:', req.body.task_id);
+  proxyRequest(req, res, EDUSP_API_BASE, '/complete', 'POST');
 });
 
-app.get('/redacao/:id', (req, res) => {
-  console.log(`📥 [REDACAO] Buscando redação ${req.params.id}`);
-  proxyRequest(req, res, REMOTE_BASE_REDACAO, `/redacao/${req.params.id}`, 'GET');
-});
-
-app.post('/redacao', (req, res) => {
-  console.log('📥 [REDACAO] Criando nova redação');
-  proxyRequest(req, res, REMOTE_BASE_REDACAO, '/redacao', 'POST');
-});
-
-app.get('/redacoes', (req, res) => {
-  console.log('📥 [REDACAO] Listando redações');
-  proxyRequest(req, res, REMOTE_BASE_REDACAO, '/redacoes', 'GET');
-});
-
-// ==================== ROTA DE GERAÇÃO COM IA ====================
+// ==================== ROTA DE GERAÇÃO COM IA (OPENROUTER) ====================
 app.post('/generate_essay', async (req, res) => {
   const { genre, prompt } = req.body;
 
@@ -220,46 +204,13 @@ ${prompt}`;
   }
 });
 
-// ==================== ROTAS DE TESTE E SAÚDE ====================
+// Rota de teste
 app.get('/ping', (req, res) => {
   res.send('pong');
-});
-
-app.get('/health', async (req, res) => {
-  try {
-    const classResponse = await fetch(`${REMOTE_BASE_CLASS}/`);
-    const redacaoResponse = await fetch(`${REMOTE_BASE_REDACAO}/`);
-    
-    res.json({
-      status: 'ok',
-      remote_servers: {
-        class: { status: classResponse.status, ok: classResponse.ok },
-        redacao: { status: redacaoResponse.status, ok: redacaoResponse.ok }
-      }
-    });
-  } catch (error) {
-    res.status(503).json({ error: 'Um ou mais servidores remotos indisponíveis', details: error.message });
-  }
-});
-
-// ==================== ROTA CATCH-ALL PARA PROXY ====================
-// Esta rota permite fazer proxy de qualquer endpoint que não foi definido acima
-app.all('/:service/:path(*)', (req, res) => {
-  const service = req.params.service;
-  const path = '/' + req.params.path;
-  
-  if (service === 'class') {
-    proxyRequest(req, res, REMOTE_BASE_CLASS, path, req.method);
-  } else if (service === 'redacao') {
-    proxyRequest(req, res, REMOTE_BASE_REDACAO, path, req.method);
-  } else {
-    res.status(400).json({ error: 'Serviço inválido. Use /class/* ou /redacao/*' });
-  }
 });
 
 // Inicia o servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor proxy rodando em http://localhost:${PORT}`);
-  console.log(`📦 Proxiando para ${REMOTE_BASE_CLASS}`);
-  console.log(`📝 Proxiando para ${REMOTE_BASE_REDACAO}`);
+  console.log(`🔗 Rotas redirecionadas para: ${EDUSP_API_BASE}`);
 });
