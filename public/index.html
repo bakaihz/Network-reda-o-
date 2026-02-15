@@ -504,6 +504,7 @@
 <div id="notification-container" class="notification-container"></div>
 
 <script>
+    // URLs relativas (mesmo servidor)
     const API_BASE_URL = '';
 
     // Elementos DOM
@@ -577,8 +578,8 @@
         localStorage.setItem('network_redacao_accounts', JSON.stringify(acc));
     }
 
-    // Atualizar lista de contas salvas
-    function updateAccountsList() {
+    btnShowAccounts.addEventListener('click', (e) => {
+        e.preventDefault();
         const accounts = getSavedAccounts();
         const container = document.getElementById('accountListContainer');
         container.innerHTML = '';
@@ -587,186 +588,4 @@
             container.innerHTML = '<p style="color: var(--gray); text-align: center;">Nenhuma conta salva.</p>';
         } else {
             for (const [ra, data] of Object.entries(accounts)) {
-                const accountEl = document.createElement('div');
-                accountEl.style.cssText = 'padding: 1rem; background: rgba(30, 74, 111, 0.2); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;';
-                accountEl.innerHTML = `
-                    <div>
-                        <strong>${data.nick || ra}</strong><br>
-                        <small style="color: var(--gray);">${ra}</small>
-                    </div>
-                    <button class="btn" style="width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="selectAccount('${ra}', '${data.password}')">
-                        <i class="fas fa-sign-in-alt"></i> Usar
-                    </button>
-                `;
-                container.appendChild(accountEl);
-            }
-        }
-    }
-
-    function selectAccount(ra, password) {
-        usernameInput.value = ra;
-        passwordInput.value = password;
-        accountsModal.classList.remove('show');
-        showNotification('Sucesso', 'Conta selecionada', 'success');
-    }
-
-    btnShowAccounts.addEventListener('click', (e) => {
-        e.preventDefault();
-        updateAccountsList();
-        accountsModal.classList.add('show');
-    });
-
-    closeAccountsModal.addEventListener('click', () => {
-        accountsModal.classList.remove('show');
-    });
-
-    // ==================== EVENTO BTNPENDING ====================
-    btnPending.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        const ra = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        
-        if (!ra || !password) {
-            showNotification('Erro', 'Preencha usuário e senha', 'error');
-            return;
-        }
-        
-        if (trava) return;
-        trava = true;
-
-        try {
-            loadingCriando.classList.add('show');
-            loadingTitle.textContent = 'Buscando redações pendentes';
-            loadingMessage.textContent = 'Aguarde...';
             
-            // Buscar redações pendentes
-            const response = await fetch(`${API_BASE_URL}/api/redacoes/pendentes`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ra, password })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            currentRedacoes = data.redacoes || [];
-            
-            loadingCriando.classList.remove('show');
-            
-            if (currentRedacoes.length === 0) {
-                showNotification('Info', 'Nenhuma redação pendente', 'info');
-            } else {
-                renderRedacoes();
-                redacaoSelectionModal.classList.add('show');
-                showNotification('Sucesso', `${currentRedacoes.length} redação(ões) encontrada(s)`, 'success');
-            }
-        } catch (error) {
-            loadingCriando.classList.remove('show');
-            console.error('Erro:', error);
-            showNotification('Erro', error.message || 'Erro ao buscar redações', 'error');
-        } finally {
-            trava = false;
-        }
-    });
-
-    // ==================== RENDERIZAR REDAÇÕES ====================
-    function renderRedacoes() {
-        redacaoListContainer.innerHTML = '';
-        
-        currentRedacoes.forEach((redacao, index) => {
-            const item = document.createElement('div');
-            item.className = 'redacao-item';
-            item.innerHTML = `
-                <label>
-                    <input type="checkbox" class="redacao-checkbox" data-index="${index}">
-                    <span>${redacao.tema || `Redação ${index + 1}`}</span>
-                </label>
-            `;
-            redacaoListContainer.appendChild(item);
-        });
-    }
-
-    // ==================== SELECIONAR TODAS ====================
-    selectAllCheckbox.addEventListener('change', (e) => {
-        const checkboxes = document.querySelectorAll('.redacao-checkbox');
-        checkboxes.forEach(cb => cb.checked = e.target.checked);
-    });
-
-    // ==================== ENVIAR REDAÇÕES ====================
-    startDraftBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        
-        const checkboxes = document.querySelectorAll('.redacao-checkbox:checked');
-        const selectedRedacoes = Array.from(checkboxes).map(cb => 
-            currentRedacoes[parseInt(cb.dataset.index)]
-        );
-        
-        if (selectedRedacoes.length === 0) {
-            showNotification('Aviso', 'Selecione ao menos uma redação', 'warning');
-            return;
-        }
-        
-        if (trava) return;
-        trava = true;
-
-        try {
-            loadingEnviando.classList.add('show');
-            
-            const ra = usernameInput.value;
-            const minTime = parseInt(minTimeInput.value) || 3;
-            const maxTime = parseInt(maxTimeInput.value) || 7;
-            
-            for (const redacao of selectedRedacoes) {
-                const response = await fetch(`${API_BASE_URL}/api/redacoes/processar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ra,
-                        redacaoId: redacao.id,
-                        minTime,
-                        maxTime
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Erro ao processar redação ${redacao.id}`);
-                }
-            }
-            
-            loadingEnviando.classList.remove('show');
-            redacaoSelectionModal.classList.remove('show');
-            
-            // Salvar conta
-            saveAccount(ra, document.getElementById('password').value, '', '');
-            updateAccountsList();
-            
-            showNotification('Sucesso', `${selectedRedacoes.length} redação(ões) processada(s)`, 'success');
-        } catch (error) {
-            loadingEnviando.classList.remove('show');
-            console.error('Erro:', error);
-            showNotification('Erro', error.message || 'Erro ao processar redações', 'error');
-        } finally {
-            trava = false;
-        }
-    });
-
-    // ==================== FECHAR MODALS ====================
-    closeRedacaoModal.addEventListener('click', () => {
-        redacaoSelectionModal.classList.remove('show');
-    });
-
-    // Fechar modals ao clicar fora
-    window.addEventListener('click', (e) => {
-        if (e.target === accountsModal) {
-            accountsModal.classList.remove('show');
-        }
-        if (e.target === redacaoSelectionModal) {
-            redacaoSelectionModal.classList.remove('show');
-        }
-    });
-</script>
-</body>
-</html>
